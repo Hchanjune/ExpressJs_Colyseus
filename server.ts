@@ -1,9 +1,10 @@
 import express from "express";
 import path from "path";
 import { createServer } from "http";
-import { Server } from "colyseus";
+import { Server} from "colyseus";
 import { WebSocketTransport } from "@colyseus/ws-transport";
-import { SampleRoom } from "./src/rooms/SampleRoom";
+import { Lobby } from "./src/rooms/Lobby";
+import {ChatRoom} from "./src/rooms/ChatRoom";
 
 const app = express();
 const port = Number(process.env.PORT) || 3000;
@@ -18,7 +19,7 @@ app.use(express.static(path.join(__dirname, 'public')));
 const httpServer = createServer(app);
 
 // Colyseus 서버 설정
-const gameServer = new Server({
+const server = new Server({
     transport: new WebSocketTransport({
         server: httpServer,
         pingInterval: 1000,
@@ -26,8 +27,8 @@ const gameServer = new Server({
     })
 });
 
-// 방(Room) 정의
-gameServer.define("sample_room", SampleRoom);
+server.define("Lobby", Lobby);
+server.define("ChatRoom", ChatRoom);
 
 httpServer.listen(port, () => {
     console.log(`Server is running at http://localhost:${port}`);
