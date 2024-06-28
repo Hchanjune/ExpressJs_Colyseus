@@ -1,25 +1,39 @@
-import { Room, Client, matchMaker } from "colyseus";
-import { LobbyState } from "../schemas/LobbyState";
-import { Player } from "../schemas/Player";
+import {Client, Room} from "colyseus";
+import {LobbyState} from "../schemas/LobbyState";
+import {Player} from "../schemas/Player";
+import {LobbyCommands, LobbyController} from "../controllers/LobbyController";
 
 export class Lobby extends Room<LobbyState> {
-    onCreate(options: any) {
-        this.setState(new LobbyState());
-        console.log(`${this.roomName} Successfully Created`);
 
-        this.onMessage("create_chat_room", async (client, message) => {
-            console.log("Received create_chat_room message:", message);
-            const chatRoomId = `${client.sessionId}_chat_room_${Date.now()}`;
-            try {
-                console.log("Attempting to create chat room with ID:", chatRoomId);
-                const chatRoom = await matchMaker.createRoom("ChatRoom", { roomName: chatRoomId });
-                console.log("Chat room created with ID:", chatRoom.roomId);
-                client.send("chat_room_created", { chatRoomId: chatRoom.roomId });
-            } catch (e) {
-                console.error("Error creating chat room:", e);
-                client.send("error", { message: "Failed to create chat room" });
-            }
+    private lobbyController: LobbyController;
+
+    constructor() {
+        super();
+        this.setState(new LobbyState());
+        this.lobbyController = new LobbyController(this.state);
+    }
+
+    onCreate(options: any) {
+        console.log(`[Lobby] ${this.roomName} Successfully Created`);
+
+        this.onMessage("*", (client, type, message) => {
+            this.handleMessage(client, type as LobbyCommands, message);
         });
+    }
+
+
+    private handleMessage(client: Client, type: LobbyCommands, message: any) {
+        console.log(`[Lobby] Received message of type ${type} from ${this.state.players.get(client.sessionId)?.id}:`, message);
+        switch (type) {
+
+            case LobbyCommands.CREATE_CHAT_ROOM:
+                this.lobbyController.handleCreateChatRoom(client, message);
+                break;
+
+            default:
+                console.log(`Unknown message type: ${type}`);
+
+        }
     }
 
     onJoin(client: Client, options: any) {
@@ -28,7 +42,7 @@ export class Lobby extends Room<LobbyState> {
         // 동일한 ID가 이미 존재하는지 확인
         for (const [sessionId, player] of this.state.players.entries()) {
             if (player.id === playerId) {
-                console.log(`Client with ID ${playerId} already connected. Kicking new connection.`);
+                console.log(`[Lobby] Client with ID ${playerId} already connected. Kicking new connection.`);
                 client.leave();
                 return;
             }
@@ -38,17 +52,17 @@ export class Lobby extends Room<LobbyState> {
         player.id = playerId;
         player.name = "Player " + this.clients.length;
         this.state.players.set(client.sessionId, player);
-        console.log(`Client joined: ${player.id}`);
+        console.log(`[Lobby] Client joined: ${player.id}`);
         // 클라이언트가 방에 조인할 때의 로직
     }
 
     onLeave(client: Client, consented: boolean) {
         const player = this.state.players.get(client.sessionId);
         if (player) {
-            console.log(`Client left: ${player.id}`);
+            console.log(`[Lobby] Client left: ${player.id}`);
             this.state.players.delete(client.sessionId);
         } else {
-            console.log(`Client left: ${client.sessionId}`);
+            console.log(`[Lobby] Client left: ${client.sessionId}`);
         }
         // 클라이언트가 방을 떠날 때의 로직
     }
