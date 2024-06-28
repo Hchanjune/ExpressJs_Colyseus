@@ -71,4 +71,11 @@ export class Lobby extends Room<LobbyState> {
         console.log(`Dispose ${this.roomName}`);
         // 방이 삭제될 때의 로직
     }
+
+    removeChatRoom(chatRoomId: string) {
+        if (this.state.chatRoomList.has(chatRoomId)) {
+            this.state.chatRoomList.delete(chatRoomId);
+            console.log(`[Lobby] Chat room ${chatRoomId} removed from list.`);
+        }
+    }
 }
