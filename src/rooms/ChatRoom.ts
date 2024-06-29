@@ -35,7 +35,7 @@ export class ChatRoom extends Room<ChatRoomState> {
         switch (type) {
 
             case ChatRoomCommands.CHAT_MESSAGE:
-                this.chatRoomController.handleMessage(client, message);
+                this.chatRoomController.handleMessage(this, client, message);
                 break;
 
             default:
@@ -62,7 +62,7 @@ export class ChatRoom extends Room<ChatRoomState> {
 
         console.log(`[${player.id}] joined To Chat Room Name [${this.state.roomName}] Owner [${this.state.roomOwner}]`);
         console.log(`[${this.state.roomName}] Current players:`, Array.from(this.state.players.values()).map(p => p.id));
-        this.chatRoomController.handleUserJoining(client, player.id);
+        this.chatRoomController.handleUserJoining(this, client, player.id);
     }
 
     onLeave(client: Client, consented: boolean) {
@@ -70,7 +70,7 @@ export class ChatRoom extends Room<ChatRoomState> {
 
         if (player) {
             console.log(`[${this.state.roomName}] Client left: ${player.id}`);
-            this.chatRoomController.handleUserLeaving(client, player.id);
+            this.chatRoomController.handleUserLeaving(this, client, player.id);
             this.state.players.delete(client.sessionId);
 
             if (player.id === this.state.roomOwner && this.state.players.size > 0) {
