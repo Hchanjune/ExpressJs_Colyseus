@@ -23,7 +23,7 @@ export class Lobby extends Room<LobbyState> {
 
 
     private handleMessage(client: Client, type: LobbyCommands, message: any) {
-        console.log(`[Lobby] Received message of type ${type} from ${this.state.players.get(client.sessionId)?.id}:`, message);
+        //console.log(`[Lobby] Received message of type ${type} from ${this.state.players.get(client.sessionId)?.id}:`, message);
         switch (type) {
 
             case LobbyCommands.CREATE_CHAT_ROOM:
