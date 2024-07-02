@@ -68,33 +68,7 @@ export class ChatRoomController {
                 await room.lock();
 
                 // 5초 카운트다운 시작
-                let secondsLeft = 5;
-                const interval = setInterval(() => {
-                    room.broadcast(ChatRoomResponses.CHAT_ECHO, { id: 'System', message: `${secondsLeft} seconds to start...` });
-                    secondsLeft--;
-                }, 1000);
-
-                // 5초 후 시작 로직
-                const timeout = setTimeout(() => {
-                    clearInterval(interval);
-                    if (room.state.chatRoomPlayers.size > 0) {
-                        room.broadcast(ChatRoomResponses.CHAT_ECHO, { id: 'System', message: 'Game is starting!' });
-                        room.broadcast(ChatRoomResponses.START, { id: 'System', message: 'START' });
-                    } else {
-                        room.broadcast(ChatRoomResponses.CHAT_ECHO, { id: 'System', message: 'Start cancelled, players left the room.' });
-                    }
-                }, 5000);
-
-                // 플레이어 나감 이벤트 처리
-                const onLeave = (client: Client) => {
-                    clearInterval(interval);
-                    clearTimeout(timeout);
-                    room.broadcast(ChatRoomResponses.CHAT_ECHO, { id: 'System', message: 'Start cancelled, a player left the room.' });
-                    room._events.off('leave', onLeave);  // 이벤트 리스너 제거
-                };
-
-                // 플레이어 나감 이벤트 리스너 추가
-                room._events.on('leave', onLeave);
+                this.startCountdown(room);
 
             } else {
                 // 준비되지 않은 플레이어가 있음
@@ -105,6 +79,35 @@ export class ChatRoomController {
         } else {
             room.broadcast(ChatRoomResponses.CHAT_ECHO, { id: 'System', message: 'Invalid Request' });
         }
+    }
+
+    private startCountdown(room: ChatRoom) {
+        let secondsLeft = 5;
+        const interval = setInterval(() => {
+            room.broadcast(ChatRoomResponses.CHAT_ECHO, { id: 'System', message: `${secondsLeft} seconds to start...` });
+            secondsLeft--;
+        }, 1000);
+
+        const timeout = setTimeout(() => {
+            clearInterval(interval);
+            if (room.state.chatRoomPlayers.size > 0) {
+                room.broadcast(ChatRoomResponses.CHAT_ECHO, { id: 'System', message: 'Game is starting!' });
+                room.broadcast(ChatRoomResponses.START, { id: 'System', message: 'START' });
+            } else {
+                room.broadcast(ChatRoomResponses.CHAT_ECHO, { id: 'System', message: 'Start cancelled, players left the room.' });
+            }
+        }, 5000);
+
+        // 플레이어 나감 이벤트 처리
+        const onLeave = () => {
+            clearInterval(interval);
+            clearTimeout(timeout);
+            room.broadcast(ChatRoomResponses.CHAT_ECHO, { id: 'System', message: 'Start cancelled, a player left the room.' });
+            room._events.off('leave', onLeave);  // 이벤트 리스너 제거
+        };
+
+        // 플레이어 나감 이벤트 리스너 추가
+        room._events.on('leave', onLeave);
     }
 
 
